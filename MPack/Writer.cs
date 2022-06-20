@@ -1,16 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace CS
+namespace MPack
 {
     internal class Writer
     {
-        private static Encoding _encoding = Encoding.UTF8;
-        private static IBitConverter _convert = EndianBitConverter.Big;
+        private static readonly Encoding _encoding = Encoding.UTF8;
+        private static readonly IBitConverter _convert = EndianBitConverter.Big;
 
         public static void EncodeToStream(Stream ms, MPack m)
         {
@@ -19,33 +17,43 @@ namespace CS
                 case MPackType.Null:
                     WriteNull(ms);
                     break;
+
                 case MPackType.String:
                     WriteString(ms, Convert.ToString(m.Value));
                     break;
+
                 case MPackType.SInt:
                     WriteInteger(ms, Convert.ToInt64(m.Value));
                     break;
+
                 case MPackType.UInt:
                     WriteInteger(ms, Convert.ToUInt64(m.Value));
                     break;
+
                 case MPackType.Bool:
                     WriteBoolean(ms, Convert.ToBoolean(m.Value));
                     break;
+
                 case MPackType.Single:
                     WriteSingle(ms, Convert.ToSingle(m.Value));
                     break;
+
                 case MPackType.Double:
                     WriteDouble(ms, Convert.ToDouble(m.Value));
                     break;
+
                 case MPackType.Binary:
                     WriteBinary(ms, (byte[])m.Value);
                     break;
+
                 case MPackType.Map:
                     WriteMap(ms, m);
                     break;
+
                 case MPackType.Array:
                     WirteArray(ms, m);
                     break;
+
                 default:
                     WriteNull(ms);
                     break;
@@ -54,9 +62,10 @@ namespace CS
 
         private static void WriteMap(Stream stream, MPack mpack)
         {
-            MPackMap map = mpack as MPackMap;
-            if (map == null)
+            if (mpack is not MPackMap map)
+            {
                 throw new InvalidOperationException("A call to WriteMap can not occur unless type is of MsgPackMap");
+            }
 
             byte b;
             byte[] lenBytes;
@@ -71,14 +80,14 @@ namespace CS
                 b = 0xDE;
                 stream.WriteByte(b);
 
-                lenBytes = _convert.GetBytes((UInt16)len);
+                lenBytes = _convert.GetBytes((ushort)len);
                 stream.Write(lenBytes, 0, lenBytes.Length);
             }
             else
             {
                 b = 0xDF;
                 stream.WriteByte(b);
-                lenBytes = _convert.GetBytes((UInt32)len);
+                lenBytes = _convert.GetBytes((uint)len);
                 stream.Write(lenBytes, 0, lenBytes.Length);
             }
 
@@ -88,6 +97,7 @@ namespace CS
                 EncodeToStream(stream, child.Value);
             }
         }
+
         private static void WirteArray(Stream ms, MPack mpack)
         {
             MPackArray list = mpack as MPackArray;
@@ -106,27 +116,28 @@ namespace CS
             {
                 b = 0xDC;
                 ms.WriteByte(b);
-                lenBytes = _convert.GetBytes((UInt16)len);
+                lenBytes = _convert.GetBytes((ushort)len);
                 ms.Write(lenBytes, 0, lenBytes.Length);
             }
             else
             {
                 b = 0xDD;
                 ms.WriteByte(b);
-                lenBytes = _convert.GetBytes((UInt32)len);
+                lenBytes = _convert.GetBytes((uint)len);
                 ms.Write(lenBytes, 0, lenBytes.Length);
             }
-
 
             for (int i = 0; i < len; i++)
             {
                 EncodeToStream(ms, list[i]);
             }
         }
+
         private static void WriteNull(Stream ms)
         {
             ms.WriteByte(0xC0);
         }
+
         private static void WriteString(Stream ms, string strVal)
         {
             //fixstr stores a byte array whose length is upto 31 bytes:
@@ -157,9 +168,9 @@ namespace CS
             //* N is the length of data
 
             byte[] rawBytes = _encoding.GetBytes(strVal);
-            byte[] lenBytes = null;
+            byte[] lenBytes;
             int len = rawBytes.Length;
-            byte b = 0;
+            byte b;
             if (len <= 31)
             {
                 b = (byte)(0xA0 + (byte)len);
@@ -188,11 +199,12 @@ namespace CS
             }
             ms.Write(rawBytes, 0, rawBytes.Length);
         }
+
         private static void WriteBinary(Stream ms, byte[] rawBytes)
         {
-            byte[] lenBytes = null;
+            byte[] lenBytes;
             int len = rawBytes.Length;
-            byte b = 0;
+            byte b;
             if (len <= 255)
             {
                 b = 0xC4;
@@ -216,29 +228,38 @@ namespace CS
             }
             ms.Write(rawBytes, 0, rawBytes.Length);
         }
+
         private static void WriteDouble(Stream ms, double val)
         {
             ms.WriteByte(0xCB);
             ms.Write(_convert.GetBytes(val), 0, 8);
         }
+
         private static void WriteSingle(Stream ms, float val)
         {
             ms.WriteByte(0xCA);
             ms.Write(_convert.GetBytes(val), 0, 4);
         }
+
         private static void WriteBoolean(Stream ms, bool val)
         {
             if (val)
+            {
                 ms.WriteByte(0xC3);
+            }
             else
+            {
                 ms.WriteByte(0xC2);
+            }
         }
+
         private static void WriteInteger(Stream ms, ulong val)
         {
             ms.WriteByte(0xCF);
             byte[] dataBytes = _convert.GetBytes(val);
             ms.Write(dataBytes, 0, 8);
         }
+
         private static void WriteInteger(Stream ms, long iVal)
         {
             if (iVal >= 0)
@@ -255,12 +276,12 @@ namespace CS
                 else if (iVal <= 0xFFFF)
                 {  //UInt16
                     ms.WriteByte(0xCD);
-                    ms.Write(_convert.GetBytes((Int16)iVal), 0, 2);
+                    ms.Write(_convert.GetBytes((short)iVal), 0, 2);
                 }
                 else if (iVal <= 0xFFFFFFFF)
                 {  //UInt32
                     ms.WriteByte(0xCE);
-                    ms.Write(_convert.GetBytes((Int32)iVal), 0, 4);
+                    ms.Write(_convert.GetBytes((int)iVal), 0, 4);
                 }
                 else
                 {  //UInt64
@@ -270,20 +291,20 @@ namespace CS
             }
             else
             {  // <0
-                if (iVal <= Int32.MinValue)  //-2147483648  // 64 bit
+                if (iVal <= int.MinValue)  //-2147483648  // 64 bit
                 {
                     ms.WriteByte(0xD3);
                     ms.Write(_convert.GetBytes(iVal), 0, 8);
                 }
-                else if (iVal <= Int16.MinValue)   // -32768    // 32 bit
+                else if (iVal <= short.MinValue)   // -32768    // 32 bit
                 {
                     ms.WriteByte(0xD2);
-                    ms.Write(_convert.GetBytes((Int32)iVal), 0, 4);
+                    ms.Write(_convert.GetBytes((int)iVal), 0, 4);
                 }
                 else if (iVal <= -128)   // -32768    // 16 bit
                 {
                     ms.WriteByte(0xD1);
-                    ms.Write(_convert.GetBytes((Int16)iVal), 0, 2);
+                    ms.Write(_convert.GetBytes((short)iVal), 0, 2);
                 }
                 else if (iVal <= -32)
                 {
