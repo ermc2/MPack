@@ -330,8 +330,7 @@ namespace MPack
                 return new MPack(v, MPackType.SInt);
             }, async (b, s, c) =>
             {
-                MPack v = _convert.ToInt64((await s.ReadAsync(8, c))
-                    , 0);
+                MPack v = _convert.ToInt64(await s.ReadAsync(8, c), 0);
                 return new MPack(v, MPackType.SInt);
             });
         }

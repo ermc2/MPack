@@ -163,7 +163,7 @@ namespace MPack
             // will fail if one of the child objects is of the incorrect type.
             if (t.IsArray)
             {
-                var elementType = t.GetElementType();
+                Type elementType = t.GetElementType();
                 if (elementType == typeof(byte))
                 {
                     return (byte[])Value;
@@ -180,7 +180,7 @@ namespace MPack
                     throw new NotSupportedException(string.Format("Casting to an array of type {0} is not supported.", elementType.Name));
                 }
 
-                var mpackArray = Value as MPackArray;
+                MPackArray mpackArray = Value as MPackArray;
                 if (mpackArray == null)
                 {
                     throw new ArgumentException(String.Format("Cannot conver MPack type {0} into type {1} (it is not an array).", ValueType, t.Name));
@@ -191,10 +191,13 @@ namespace MPack
                     return mpackArray.ToArray();
                 }
 
-                var count = mpackArray.Count;
-                var objArray = Array.CreateInstance(elementType, count);
+                int count = mpackArray.Count;
+                Array objArray = Array.CreateInstance(elementType, count);
                 for (int i = 0; i < count; i++)
+                {
                     objArray.SetValue(mpackArray[i].To(elementType), i);
+                }
+
                 return objArray;
             }
 
@@ -217,6 +220,8 @@ namespace MPack
                 return default;
             }
         }
+
+        #region boolean operators implemet IEquatable
 
         public static bool operator ==(MPack m1, MPack m2)
         {
@@ -243,6 +248,10 @@ namespace MPack
             }
             return true;
         }
+
+        #endregion boolean operators implemet IEquatable
+
+        #region IConvertable From
 
         public static implicit operator MPack(bool value)
         {
@@ -294,6 +303,11 @@ namespace MPack
             return From(value);
         }
 
+        public static implicit operator MPack(long value)
+        {
+            return From(value);
+        }
+
         public static implicit operator MPack(string value)
         {
             return From(value);
@@ -308,6 +322,10 @@ namespace MPack
         {
             return From(value);
         }
+
+        #endregion IConvertable From
+
+        #region IConvertable To
 
         public static explicit operator bool(MPack value)
         {
@@ -359,6 +377,11 @@ namespace MPack
             return value.To<int>();
         }
 
+        public static explicit operator long(MPack value)
+        {
+            return value.To<long>();
+        }
+
         public static explicit operator string(MPack value)
         {
             return value.To<string>();
@@ -373,6 +396,8 @@ namespace MPack
         {
             return value.To<MPack[]>();
         }
+
+        #endregion IConvertable To
 
         public static MPack ParseFromBytes(byte[] array)
         {
