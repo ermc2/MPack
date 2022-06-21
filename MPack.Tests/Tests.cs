@@ -1,16 +1,15 @@
-﻿using System;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
-using NUnit.Framework;
 
-namespace CS.MPackTests
+namespace MPack.MPackTests
 {
-    [TestFixture()]
+    [TestClass()]
     public class Tests
     {
-        [Test()]
+        [TestMethod()]
         public void TestDouble()
         {
-            var tests = new[]
+            double[] tests = new[]
             {
                 0d,
                 1d,
@@ -19,27 +18,28 @@ namespace CS.MPackTests
                 256d,
                 65530d,
                 65540d,
-                Double.NaN,
-                Double.MaxValue,
-                Double.MinValue,
-                Double.PositiveInfinity,
-                Double.NegativeInfinity
+                double.NaN,
+                double.MaxValue,
+                double.MinValue,
+                double.PositiveInfinity,
+                double.NegativeInfinity
             };
-            foreach (var value in tests)
+            foreach (double value in tests)
             {
                 Assert.AreEqual(value, MPack.ParseFromBytes(MPack.From(value).EncodeToBytes()).To<double>());
             }
         }
 
-        [Test()]
+        [TestMethod()]
         public void TestNull()
         {
-            Assert.AreEqual(null, MPack.ParseFromBytes(MPack.Null().EncodeToBytes()).To<object>());
+            Assert.IsNull(MPack.ParseFromBytes(MPack.Null().EncodeToBytes()).To<object>());
         }
-        [Test()]
+
+        [TestMethod()]
         public void TestString()
         {
-            var tests = new string[]
+            string[] tests = new string[]
             {
                 Helpers.GetString(2),
                 Helpers.GetString(8),
@@ -48,15 +48,16 @@ namespace CS.MPackTests
                 Helpers.GetString(257),
                 Helpers.GetString(65537)
             };
-            foreach (var value in tests)
+            foreach (string value in tests)
             {
                 Assert.AreEqual(value, MPack.ParseFromBytes(MPack.From(value).EncodeToBytes()).To<string>());
             }
         }
-        [Test()]
+
+        [TestMethod()]
         public void TestInteger()
         {
-            var tests = new[]
+            long[] tests = new[]
             {
                 0,
                 1,
@@ -71,109 +72,118 @@ namespace CS.MPackTests
                 long.MaxValue,
                 long.MinValue,
             };
-            foreach (var value in tests)
+            foreach (long value in tests)
             {
-                Assert.AreEqual(value, MPack.ParseFromBytes(MPack.From(value).EncodeToBytes()).To<long>());
+                byte[] data = MPack.From(value).EncodeToBytes();
+                long parsed = MPack.ParseFromBytes(data).To<long>();
+                Assert.AreEqual(value, parsed, $"{value} is not equal {parsed}");
             }
         }
-        [Test()]
+
+        [TestMethod()]
         public void TestMap()
         {
-            MPackMap dictionary = new MPackMap
+            MPackMap dictionary = new()
             {
                 {
-                    "array1", MPack.From(new[]
+                    "array1",
+                    MPack.From(new[]
                     {
                         MPack.From("array1_value1"),
                         MPack.From("array1_value2"),
                         MPack.From("array1_value3"),
                     })
                 },
-                {"bool1", MPack.From(true)},
-                {"double1", MPack.From(50.5)},
-                {"double2", MPack.From(15.2)},
-                {"int1", MPack.From(50505)},
-                {"int2", MPack.From(50)},
-                {3.14, MPack.From(3.14)},
-                {42, MPack.From(42)}
+                { "bool1", MPack.From(true) },
+                { "double1", MPack.From(50.5) },
+                { "double2", MPack.From(15.2) },
+                { "int1", MPack.From(50505) },
+                { "int2", MPack.From(50) },
+                { 3.14, MPack.From(3.14) },
+                { 42, MPack.From(42) }
             };
-            
-            var bytes = dictionary.EncodeToBytes();
-            var result = MPack.ParseFromBytes(bytes) as MPackMap;
-            Assert.AreEqual(dictionary, result);
+
+            byte[] bytes = dictionary.EncodeToBytes();
+            MPackMap result = MPack.ParseFromBytes(bytes) as MPackMap;
+            CollectionAssert.AreEqual(dictionary.ToArray(), result.ToArray());
         }
-        [Test()]
+
+        [TestMethod()]
         public void TestArray()
         {
-            var tests = new[]
+            MPack[] tests = new[]
             {
-                (float) 0,
-                (float) 50505,
-                Single.NaN,
-                Single.MaxValue,
-                Single.MinValue,
-                Single.PositiveInfinity,
-                Single.NegativeInfinity,
-                Single.Epsilon,
+                0,
+                50505,
+                float.NaN,
+                float.MaxValue,
+                float.MinValue,
+                float.PositiveInfinity,
+                float.NegativeInfinity,
+                float.Epsilon,
             }.Select(f => MPack.From(f))
             .ToArray();
 
-            var arr = new MPackArray(tests);
-            var bytes = arr.EncodeToBytes();
-            var round = MPack.ParseFromBytes(bytes) as MPackArray;
+            MPackArray arr = new(tests);
+            byte[] bytes = arr.EncodeToBytes();
+            MPackArray round = MPack.ParseFromBytes(bytes) as MPackArray;
 
-            Assert.IsTrue(round != null);
-            Assert.IsTrue(arr.Count == round.Count);
+            Assert.IsNotNull(round);
+            Assert.AreEqual(arr.Count, round.Count);
             for (int i = 0; i < arr.Count; i++)
             {
                 Assert.AreEqual(arr[i], round[i]);
             }
             Assert.AreEqual(arr, round);
         }
-        [Test()]
+
+        [TestMethod()]
         public void TestUInt64()
         {
-            var tests = new[]
+            ulong[] tests = new[]
             {
-                UInt64.MaxValue,
-                UInt64.MinValue,
+                ulong.MaxValue,
+                ulong.MinValue,
             };
-            foreach (var value in tests)
+            foreach (ulong value in tests)
             {
                 Assert.AreEqual(value, MPack.ParseFromBytes(MPack.From(value).EncodeToBytes()).To<ulong>());
             }
         }
-        [Test()]
+
+        [TestMethod()]
         public void TestBoolean()
         {
-            var tru = MPack.ParseFromBytes(MPack.From(true).EncodeToBytes()).To<bool>();
-            var fal = MPack.ParseFromBytes(MPack.From(false).EncodeToBytes()).To<bool>();
+            bool tru = MPack.ParseFromBytes(MPack.From(true).EncodeToBytes()).To<bool>();
+            bool fal = MPack.ParseFromBytes(MPack.From(false).EncodeToBytes()).To<bool>();
             Assert.IsTrue(tru);
             Assert.IsFalse(fal);
         }
-        [Test()]
+
+        [TestMethod()]
         public void TestSingle()
         {
-            var tests = new[]
+            float[] tests = new[]
             {
-                (float)0,
-                (float)50505,
-                Single.NaN,
-                Single.MaxValue,
-                Single.MinValue,
-                Single.PositiveInfinity,
-                Single.NegativeInfinity,
-                Single.Epsilon,
+                0,
+                50505,
+                float.NaN,
+                float.MaxValue,
+                float.MinValue,
+                float.PositiveInfinity,
+                float.NegativeInfinity,
+                float.Epsilon,
             };
-            foreach (var value in tests)
+            foreach (float value in tests)
             {
                 Assert.AreEqual(value, MPack.ParseFromBytes(MPack.From(value).EncodeToBytes()).To<float>());
             }
         }
-        [Test()]
+
+        [TestMethod()]
         public void TestBinary()
         {
-            var tests = new[]
+            byte[][] tests = new[]
             {
                 Helpers.GetBytes(8),
                 Helpers.GetBytes(16),
@@ -181,9 +191,9 @@ namespace CS.MPackTests
                 Helpers.GetBytes(257),
                 Helpers.GetBytes(65537)
             };
-            foreach (var value in tests)
+            foreach (byte[] value in tests)
             {
-                var result = MPack.ParseFromBytes(MPack.From(value).EncodeToBytes()).To<byte[]>();
+                byte[] result = MPack.ParseFromBytes(MPack.From(value).EncodeToBytes()).To<byte[]>();
                 Assert.IsTrue(Enumerable.SequenceEqual(value, result));
             }
         }
