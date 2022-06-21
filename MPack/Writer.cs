@@ -51,7 +51,7 @@ namespace MPack
                     break;
 
                 case MPackType.Array:
-                    WirteArray(ms, m);
+                    WriteArray(ms, m);
                     break;
 
                 default:
@@ -98,7 +98,7 @@ namespace MPack
             }
         }
 
-        private static void WirteArray(Stream ms, MPack mpack)
+        private static void WriteArray(Stream ms, MPack mpack)
         {
             MPackArray list = mpack as MPackArray;
             if (list == null)
@@ -255,9 +255,30 @@ namespace MPack
 
         private static void WriteInteger(Stream ms, ulong val)
         {
-            ms.WriteByte(0xCF);
-            byte[] dataBytes = _convert.GetBytes(val);
-            ms.Write(dataBytes, 0, 8);
+            if (val <= 127) // fixedval
+            {
+                ms.WriteByte((byte)val);
+            }
+            else if (val <= 255) // uint8
+            {
+                ms.WriteByte(0xCC);
+                ms.WriteByte((byte)val);
+            }
+            else if (val <= 0xFFFF)
+            {
+                ms.WriteByte(0xCD);
+                ms.Write(_convert.GetBytes((ushort)val), 0, 2);
+            }
+            else if (val <= 0xFFFFFFFF)
+            {
+                ms.WriteByte(0xCE);
+                ms.Write(_convert.GetBytes((uint)val), 0, 4);
+            }
+            else
+            {
+                ms.WriteByte(0xCF);
+                ms.Write(_convert.GetBytes(val), 0, 8);
+            }
         }
 
         private static void WriteInteger(Stream ms, long iVal)
@@ -269,22 +290,34 @@ namespace MPack
                     ms.WriteByte((byte)iVal);
                 }
                 else if (iVal <= 255)
-                {  //UInt8
+                {  // UInt8
                     ms.WriteByte(0xCC);
                     ms.WriteByte((byte)iVal);
                 }
+                else if (iVal <= 0x7FFF)
+                {
+                    // Int16
+                    ms.WriteByte(0xD1);
+                    ms.Write(_convert.GetBytes((short)iVal), 0, 2);
+                }
                 else if (iVal <= 0xFFFF)
-                {  //UInt16
+                {  // UInt16
                     ms.WriteByte(0xCD);
                     ms.Write(_convert.GetBytes((short)iVal), 0, 2);
                 }
+                else if (iVal <= 0x7FFFFFFF)
+                {
+                    // Int32
+                    ms.WriteByte(0xD2);
+                    ms.Write(_convert.GetBytes((int)iVal), 0, 4);
+                }
                 else if (iVal <= 0xFFFFFFFF)
-                {  //UInt32
+                {  // UInt32
                     ms.WriteByte(0xCE);
                     ms.Write(_convert.GetBytes((int)iVal), 0, 4);
                 }
                 else
-                {  //UInt64
+                {  // Int64
                     ms.WriteByte(0xD3);
                     ms.Write(_convert.GetBytes(iVal), 0, 8);
                 }
@@ -306,7 +339,7 @@ namespace MPack
                     ms.WriteByte(0xD1);
                     ms.Write(_convert.GetBytes((short)iVal), 0, 2);
                 }
-                else if (iVal <= -32)
+                else if (iVal < -32)
                 {
                     ms.WriteByte(0xD0);
                     ms.WriteByte((byte)iVal);

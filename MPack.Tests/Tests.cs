@@ -197,5 +197,24 @@ namespace MPack.MPackTests
                 Assert.IsTrue(Enumerable.SequenceEqual(value, result));
             }
         }
+
+        [TestMethod]
+        public void TestNumberToBytes()
+        {
+            CollectionAssert.AreEqual(MPack.From(127).EncodeToBytes(), new byte[] { 0b01111111 }); // 127
+            CollectionAssert.AreEqual(MPack.From(0xFF).EncodeToBytes(), new byte[] { 0xCC, 0xFF }); // 255
+            CollectionAssert.AreEqual(MPack.From(0x7FFF).EncodeToBytes(), new byte[] { 0xD1, 0x7F, 0xFF }); // 0x7FFF
+            CollectionAssert.AreEqual(MPack.From((ushort)0x7FFF).EncodeToBytes(), new byte[] { 0xCD, 0x7F, 0xFF }); // (ushort)0x7FFF
+            CollectionAssert.AreEqual(MPack.From(0xFFFF).EncodeToBytes(), new byte[] { 0xCD, 0xFF, 0xFF }); // 0xFFFF;
+            CollectionAssert.AreEqual(MPack.From(0xFFFFFFFF).EncodeToBytes(), new byte[] { 0xCE, 0xFF, 0xFF, 0xFF, 0xFF }); // 0xFFFFFFFF
+            CollectionAssert.AreEqual(MPack.From(0xF_FFFF_FFFF).EncodeToBytes(), new byte[] { 0xD3, 0x00, 0x00, 0x00, 0x0F, 0xFF, 0xFF, 0xFF, 0xFF }); // 0xF_FFFF_FFFF
+            CollectionAssert.AreEqual(MPack.From((ulong)0xF_FFFF_FFFF).EncodeToBytes(), new byte[] { 0xCF, 0x00, 0x00, 0x00, 0x0F, 0xFF, 0xFF, 0xFF, 0xFF }); //(ulong)0xF_FFFF_FFFF
+            CollectionAssert.AreEqual(MPack.From(0x8000_0000_FFFF_FFFF).EncodeToBytes(), new byte[] { 0xCF, 0x80, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF }); // 0x8000_0000_FFFF_FFFF"
+
+            CollectionAssert.AreEqual(MPack.From(-32).EncodeToBytes(), new byte[] { 0b11100000 }); // -32
+            CollectionAssert.AreEqual(MPack.From(-33).EncodeToBytes(), new byte[] { 0xD0, 0xDF }); // -33
+            CollectionAssert.AreEqual(MPack.From(-127).EncodeToBytes(), new byte[] { 0xD0, 0x81 }); // -127
+            CollectionAssert.AreEqual(MPack.From(-128).EncodeToBytes(), new byte[] { 0xD1, 0xFF, 0x80 }); // -128
+        }
     }
 }
